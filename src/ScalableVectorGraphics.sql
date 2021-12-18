@@ -5,7 +5,7 @@ CREATE OR REPLACE PACKAGE scalable_vector_graphics
 -- Description: A package to build the SVG version 1.1 graphics based on the XML grammar.
 --              Each function returns an SVG element, container element or graphic element,
 --              including the respective attributes and properties.
--- Version:     1.0.0
+-- Version:     1.0.1
 -- License:     https://opensource.org/licenses/GPL-3.0 GNU General Public License version 3
 -- =================================================================================================
 AS
@@ -427,11 +427,11 @@ AS
   FUNCTION radialgradient_element (
     p_stops                   IN VARCHAR2
   , p_id                      IN VARCHAR2 DEFAULT NULL
-  , p_cx                      IN NUMBER   DEFAULT NULL
-  , p_cy                      IN NUMBER   DEFAULT NULL
-  , p_r                       IN NUMBER   DEFAULT NULL
-  , p_fx                      IN NUMBER   DEFAULT NULL
-  , p_fy                      IN NUMBER   DEFAULT NULL
+  , p_cx                      IN VARCHAR2 DEFAULT NULL
+  , p_cy                      IN VARCHAR2 DEFAULT NULL
+  , p_r                       IN VARCHAR2 DEFAULT NULL
+  , p_fx                      IN VARCHAR2 DEFAULT NULL
+  , p_fy                      IN VARCHAR2 DEFAULT NULL
   , p_gradientunits           IN VARCHAR2 DEFAULT NULL
   , p_gradienttransform       IN VARCHAR2 DEFAULT NULL
   , p_spreadmethod            IN VARCHAR2 DEFAULT NULL
@@ -2764,16 +2764,17 @@ AS
   --
   -- Change History:
   --   21/11/21 Daniel Madeira: Initial release
+  --   15/12/21 Daniel Madeira: NUMBER to VARCHAR2
   --   
   -- =================================================================================================
   FUNCTION radialgradient_element (
     p_stops             IN VARCHAR2
   , p_id                IN VARCHAR2 DEFAULT NULL
-  , p_cx                IN NUMBER   DEFAULT NULL
-  , p_cy                IN NUMBER   DEFAULT NULL
-  , p_r                 IN NUMBER   DEFAULT NULL
-  , p_fx                IN NUMBER   DEFAULT NULL
-  , p_fy                IN NUMBER   DEFAULT NULL
+  , p_cx                IN VARCHAR2 DEFAULT NULL
+  , p_cy                IN VARCHAR2 DEFAULT NULL
+  , p_r                 IN VARCHAR2 DEFAULT NULL
+  , p_fx                IN VARCHAR2 DEFAULT NULL
+  , p_fy                IN VARCHAR2 DEFAULT NULL
   , p_gradientunits     IN VARCHAR2 DEFAULT NULL
   , p_gradienttransform IN VARCHAR2 DEFAULT NULL
   , p_spreadmethod      IN VARCHAR2 DEFAULT NULL
