@@ -2,10 +2,11 @@ CREATE OR REPLACE PACKAGE scalable_vector_graphics
 -- =================================================================================================
 -- Author:      Daniel Madeira
 -- Create date: 21/11/2021
+-- Update date: 26/10/2026
 -- Description: A package to build the SVG version 1.1 graphics based on the XML grammar.
 --              Each function returns an SVG element, container element or graphic element,
 --              including the respective attributes and properties.
--- Version:     1.0.1
+-- Version:     1.0.2
 -- License:     https://opensource.org/licenses/GPL-3.0 GNU General Public License version 3
 -- =================================================================================================
 AS
@@ -281,21 +282,21 @@ AS
   RETURN VARCHAR2;
   
   FUNCTION font_face_src_element (
-    p_id                      IN VARCHAR2
+    p_id                      IN VARCHAR2 DEFAULT NULL
   , p_fonte_face_uri          IN VARCHAR2 DEFAULT NULL
   , p_fonte_face_name         IN VARCHAR2 DEFAULT NULL
   )
   RETURN VARCHAR2;
   
   FUNCTION font_face_element (
-    p_font_face_src           IN VARCHAR2
+    p_font_face_src           IN VARCHAR2 DEFAULT NULL
   , p_id                      IN VARCHAR2 DEFAULT NULL
   , p_presentation            IN VARCHAR2 DEFAULT NULL
   )
   RETURN VARCHAR2;
   
   FUNCTION glyph_element (
-    p_content                 IN VARCHAR2
+    p_content                 IN VARCHAR2 DEFAULT NULL
   , p_id                      IN VARCHAR2 DEFAULT NULL
   , p_unicode                 IN VARCHAR2 DEFAULT NULL
   , p_glyphname               IN VARCHAR2 DEFAULT NULL
@@ -419,8 +420,8 @@ AS
   
   FUNCTION stop_element (
     p_offset                  IN VARCHAR2
-  , p_stop_color              IN VARCHAR2
-  , p_stop_opacity            IN VARCHAR2
+  , p_stop_color              IN VARCHAR2 DEFAULT NULL
+  , p_stop_opacity            IN VARCHAR2 DEFAULT NULL
   )
   RETURN VARCHAR2;
   
@@ -573,6 +574,8 @@ AS
   )
   RETURN CLOB
   IS
+    l_width               VARCHAR2(100);
+    l_height              VARCHAR2(100);
     l_x                   VARCHAR2(100);
     l_y                   VARCHAR2(100);
     l_ns                  VARCHAR2(100);
@@ -580,18 +583,24 @@ AS
     l_baseprofile         VARCHAR2(100);
     l_contentscripttype   VARCHAR2(100);
     l_contentstyletype    VARCHAR2(100);
-    l_base                VARCHAR2(100);
+    l_base                VARCHAR2(1000);
     l_lang                VARCHAR2(100);
     l_space               VARCHAR2(100);
     l_link                VARCHAR2(100);
-    l_viewbox             VARCHAR2(100);
+    l_viewbox             VARCHAR2(1000);
     l_preserveaspectratio VARCHAR2(100);
     l_zoomandpan          VARCHAR2(100);
     l_id                  VARCHAR2(100);
-    l_class               VARCHAR2(100);
-    l_style               VARCHAR2(100);
+    l_class               VARCHAR2(1000);
+    l_style               VARCHAR2(4000);
     
   BEGIN
+    IF p_width IS NOT NULL THEN
+      l_width := ' width="' || p_width || '"';
+    END IF;
+    IF p_height IS NOT NULL THEN
+      l_height := ' height="' || p_height || '"';
+    END IF;
     IF p_x IS NOT NULL THEN
       l_x := ' x="' || p_x || '"';
     END IF;
@@ -644,7 +653,7 @@ AS
       l_style := ' style="' || p_style || '"';
     END IF;
   
-    RETURN to_clob ('<svg' || l_ns || l_version || l_baseprofile || l_contentscripttype || l_contentstyletype || l_base || l_lang || l_space || l_link || l_id || p_presentation || l_class || l_style || ' width="' || p_width || '" height="' || p_height || '"' || l_x || l_y || l_viewbox || l_preserveaspectratio || l_zoomandpan || '>' || chr(13) || chr(10) ||
+    RETURN to_clob ('<svg' || l_ns || l_version || l_baseprofile || l_contentscripttype || l_contentstyletype || l_base || l_lang || l_space || l_link || l_id || p_presentation || l_class || l_style || l_width || l_height || l_x || l_y || l_viewbox || l_preserveaspectratio || l_zoomandpan || '>' || chr(13) || chr(10) ||
            p_content || chr(13) || chr(10) ||
            '</svg>');
     
@@ -724,9 +733,9 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
     
   BEGIN
     IF p_class IS NOT NULL THEN
@@ -787,13 +796,13 @@ AS
   RETURN VARCHAR2
   IS
     l_id            VARCHAR2(100);
-    l_xlink_href    VARCHAR2(255);
+    l_xlink_href    VARCHAR2(1000);
     l_xlink_show    VARCHAR2(100);
     l_xlink_actuate VARCHAR2(100);
     l_target        VARCHAR2(100);
-    l_class         VARCHAR2(100);
-    l_style         VARCHAR2(100);
-    l_transform     VARCHAR2(100);
+    l_class         VARCHAR2(1000);
+    l_style         VARCHAR2(4000);
+    l_transform     VARCHAR2(1000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -848,16 +857,18 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_xlinkhref    VARCHAR2(100);
-    l_content      VARCHAR2(4000);
+    l_xlinkhref    VARCHAR2(1000);
+    l_content      VARCHAR2(32767);
     l_content_type VARCHAR2(100);
     
   BEGIN
     IF p_xlinkhref IS NOT NULL THEN
-      l_xlinkhref := ' xlink:href="' || p_xlinkhref || '" />';
-    ELSIF p_content IS NOT NULL THEN
-      l_xlinkhref := '>';
-      l_content := '<![CDATA[' || chr(13) || chr(10) || p_content || chr(13) || chr(10) || ']]></script>';
+      l_xlinkhref := ' xlink:href="' || p_xlinkhref || '"';
+    END IF;
+    IF p_content IS NOT NULL THEN
+      l_content := '>' || '<![CDATA[' || chr(13) || chr(10) || p_content || chr(13) || chr(10) || ']]></script>';
+    ELSE
+      l_content := ' />';
     END IF;
     IF p_content_type IS NOT NULL THEN
       l_content_type := ' type="' || p_content_type || '"';
@@ -902,9 +913,9 @@ AS
   RETURN VARCHAR2
   IS
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -960,10 +971,10 @@ AS
   RETURN VARCHAR2
   IS
     l_id                  VARCHAR2(100);
-    l_class               VARCHAR2(100);
-    l_style               VARCHAR2(100);
+    l_class               VARCHAR2(1000);
+    l_style               VARCHAR2(4000);
     l_preserveaspectratio VARCHAR2(100);
-    l_viewbox             VARCHAR2(100);
+    l_viewbox             VARCHAR2(1000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -1032,9 +1043,9 @@ AS
     l_y          VARCHAR2(100);
     l_width      VARCHAR2(100);
     l_height     VARCHAR2(100);
-    l_class      VARCHAR2(100);
-    l_style      VARCHAR2(100);
-    l_transform  VARCHAR2(100);
+    l_class      VARCHAR2(1000);
+    l_style      VARCHAR2(4000);
+    l_transform  VARCHAR2(1000);
     
   BEGIN
     IF p_x IS NOT NULL THEN
@@ -1102,9 +1113,9 @@ AS
   IS
     l_id         VARCHAR2(100);
     l_pathlength VARCHAR2(100);
-    l_class      VARCHAR2(100);
-    l_style      VARCHAR2(100);
-    l_transform  VARCHAR2(100);
+    l_class      VARCHAR2(1000);
+    l_style      VARCHAR2(4000);
+    l_transform  VARCHAR2(1000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -1204,7 +1215,7 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_attributes VARCHAR2(1000);
+    l_attributes VARCHAR2(4000);
     
   BEGIN
     IF p_text_anchor IS NOT NULL THEN
@@ -1344,17 +1355,17 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_x            VARCHAR2(100);
-    l_y            VARCHAR2(100);
-    l_dx           VARCHAR2(100);
-    l_dy           VARCHAR2(100);
-    l_rotate       VARCHAR2(100);
+    l_x            VARCHAR2(1000);
+    l_y            VARCHAR2(1000);
+    l_dx           VARCHAR2(1000);
+    l_dy           VARCHAR2(1000);
+    l_rotate       VARCHAR2(1000);
     l_textlength   VARCHAR2(100);
     l_lengthadjust VARCHAR2(100);
     l_id           VARCHAR2(100);
-    l_class        VARCHAR2(100);
-    l_style        VARCHAR2(100);
-    l_transform    VARCHAR2(100);
+    l_class        VARCHAR2(1000);
+    l_style        VARCHAR2(4000);
+    l_transform    VARCHAR2(1000);
     
   BEGIN
     IF p_x IS NOT NULL THEN
@@ -1439,16 +1450,16 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_x            VARCHAR2(100);
-    l_y            VARCHAR2(100);
-    l_dx           VARCHAR2(100);
-    l_dy           VARCHAR2(100);
-    l_rotate       VARCHAR2(100);
+    l_x            VARCHAR2(1000);
+    l_y            VARCHAR2(1000);
+    l_dx           VARCHAR2(1000);
+    l_dy           VARCHAR2(1000);
+    l_rotate       VARCHAR2(1000);
     l_textlength   VARCHAR2(100);
     l_lengthadjust VARCHAR2(100);
     l_id           VARCHAR2(100);
-    l_class        VARCHAR2(100);
-    l_style        VARCHAR2(100);
+    l_class        VARCHAR2(1000);
+    l_style        VARCHAR2(4000);
     
   BEGIN
     IF p_x IS NOT NULL THEN
@@ -1515,10 +1526,10 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_xlinkhref VARCHAR2(100);
+    l_xlinkhref VARCHAR2(1000);
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
     
   BEGIN
     IF p_xlinkhref IS NOT NULL THEN
@@ -1574,13 +1585,13 @@ AS
   )
   RETURN VARCHAR2
   IS
-    l_xlinkhref   VARCHAR2(100);
+    l_xlinkhref   VARCHAR2(1000);
     l_startoffset VARCHAR2(100);
     l_method      VARCHAR2(100);
     l_spacing     VARCHAR2(100);
     l_id          VARCHAR2(100);
-    l_class       VARCHAR2(100);
-    l_style       VARCHAR2(100);
+    l_class       VARCHAR2(1000);
+    l_style       VARCHAR2(4000);
     
   BEGIN
     IF p_xlinkhref IS NOT NULL THEN
@@ -1655,8 +1666,8 @@ AS
     l_vertoriginx  VARCHAR2(100);
     l_vertoriginy  VARCHAR2(100);
     l_vertadvy     VARCHAR2(100);
-    l_class        VARCHAR2(100);
-    l_style        VARCHAR2(100);
+    l_class        VARCHAR2(1000);
+    l_style        VARCHAR2(4000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -1944,13 +1955,18 @@ AS
   --   
   -- =================================================================================================
   FUNCTION font_face_src_element (
-    p_id              IN VARCHAR2
+    p_id              IN VARCHAR2 DEFAULT NULL
   , p_fonte_face_uri  IN VARCHAR2 DEFAULT NULL
   , p_fonte_face_name IN VARCHAR2 DEFAULT NULL)
   RETURN VARCHAR2
   IS
+    l_id VARCHAR2(100);
   BEGIN
-    RETURN '<font-face-src id="' || p_id || '">' || p_fonte_face_uri || p_fonte_face_name || '</font-face-src>' || chr(13) || chr(10);
+    IF p_id IS NOT NULL THEN
+      l_id := ' id="' || p_id || '"';
+    END IF;
+
+    RETURN '<font-face-src' || l_id || '>' || p_fonte_face_uri || p_fonte_face_name || '</font-face-src>' || chr(13) || chr(10);
   END font_face_src_element;
   
   -- =================================================================================================
@@ -1971,7 +1987,7 @@ AS
   --   
   -- =================================================================================================
   FUNCTION font_face_element (
-    p_font_face_src IN VARCHAR2
+    p_font_face_src IN VARCHAR2 DEFAULT NULL
   , p_id            IN VARCHAR2 DEFAULT NULL
   , p_presentation  IN VARCHAR2 DEFAULT NULL
   )
@@ -2018,7 +2034,7 @@ AS
   --   
   -- =================================================================================================
   FUNCTION glyph_element (
-    p_content      IN VARCHAR2
+    p_content      IN VARCHAR2 DEFAULT NULL
   , p_id           IN VARCHAR2 DEFAULT NULL
   , p_unicode      IN VARCHAR2 DEFAULT NULL
   , p_glyphname    IN VARCHAR2 DEFAULT NULL
@@ -2039,7 +2055,7 @@ AS
     l_id          VARCHAR2(100);
     l_unicode     VARCHAR2(100);
     l_glyphname   VARCHAR2(100);
-    l_d           VARCHAR2(100);
+    l_d           VARCHAR2(4000);
     l_orientation VARCHAR2(100);
     l_arabicform  VARCHAR2(100);
     l_lang        VARCHAR2(100);
@@ -2047,8 +2063,8 @@ AS
     l_vertoriginx VARCHAR2(100);
     l_vertoriginy VARCHAR2(100);
     l_vertadvy    VARCHAR2(100);
-    l_class       VARCHAR2(100);
-    l_style       VARCHAR2(100);
+    l_class       VARCHAR2(1000);
+    l_style       VARCHAR2(4000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -2148,9 +2164,9 @@ AS
     l_rx        VARCHAR2(100);
     l_ry        VARCHAR2(100);
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
     
   BEGIN
     IF p_x IS NOT NULL THEN
@@ -2230,9 +2246,9 @@ AS
     l_cy        VARCHAR2(100);
     l_r         VARCHAR2(100);
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
     
   BEGIN
     IF p_cx IS NOT NULL THEN
@@ -2307,9 +2323,9 @@ AS
     l_rx        VARCHAR2(100);
     l_ry        VARCHAR2(100);
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
     
   BEGIN
     IF p_cx IS NOT NULL THEN
@@ -2386,9 +2402,9 @@ AS
     l_x2        VARCHAR2(100);
     l_y2        VARCHAR2(100);
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
     
   BEGIN
     IF p_x1 IS NOT NULL THEN
@@ -2455,9 +2471,9 @@ AS
   RETURN VARCHAR2
   IS
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
   
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -2512,9 +2528,9 @@ AS
   RETURN VARCHAR2
   IS
     l_id        VARCHAR2(100);
-    l_class     VARCHAR2(100);
-    l_style     VARCHAR2(100);
-    l_transform VARCHAR2(100);
+    l_class     VARCHAR2(1000);
+    l_style     VARCHAR2(4000);
+    l_transform VARCHAR2(1000);
   
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -2584,9 +2600,9 @@ AS
     l_width               VARCHAR2(100);
     l_height              VARCHAR2(100);
     l_preserveaspectratio VARCHAR2(100);
-    l_class               VARCHAR2(100);
-    l_style               VARCHAR2(100);
-    l_transform           VARCHAR2(100);
+    l_class               VARCHAR2(1000);
+    l_style               VARCHAR2(4000);
+    l_transform           VARCHAR2(1000);
     
   BEGIN
     IF p_x IS NOT NULL THEN
@@ -2614,7 +2630,7 @@ AS
       l_transform := ' transform="' || p_transform || '"';
     END IF;
     
-    RETURN '<image' || l_x || l_y || l_width || l_height || '" xlink:href="' || p_xlinkhref || '"' || l_preserveaspectratio || p_presentation || l_class || l_style || l_transform || '></image>' || chr(13) || chr(10);
+    RETURN '<image' || l_x || l_y || l_width || l_height || ' xlink:href="' || p_xlinkhref || '"' || l_preserveaspectratio || p_presentation || l_class || l_style || l_transform || '></image>' || chr(13) || chr(10);
     
   END image_element;
   
@@ -2667,11 +2683,11 @@ AS
     l_x2                VARCHAR2(100);
     l_y2                VARCHAR2(100);
     l_gradientunits     VARCHAR2(100);
-    l_gradienttransform VARCHAR2(100);
+    l_gradienttransform VARCHAR2(1000);
     l_spreadmethod      VARCHAR2(100);
-    l_xlinkhref         VARCHAR2(100);
-    l_class             VARCHAR2(100);
-    l_style             VARCHAR2(100);
+    l_xlinkhref         VARCHAR2(1000);
+    l_class             VARCHAR2(1000);
+    l_style             VARCHAR2(4000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -2699,7 +2715,7 @@ AS
       l_spreadmethod := ' spreadMethod="' || p_spreadmethod || '"';
     END IF;
     IF p_xlinkhref IS NOT NULL THEN
-      l_xlinkhref := ' xlink:href = "' || p_xlinkhref || '"';
+      l_xlinkhref := ' xlink:href="' || p_xlinkhref || '"';
     END IF;
     IF p_class IS NOT NULL THEN
       l_class := ' class="' || p_class || '"';
@@ -2730,13 +2746,22 @@ AS
   -- =================================================================================================
   FUNCTION stop_element (
     p_offset       IN VARCHAR2
-  , p_stop_color   IN VARCHAR2
-  , p_stop_opacity IN VARCHAR2
+  , p_stop_color   IN VARCHAR2 DEFAULT NULL
+  , p_stop_opacity IN VARCHAR2 DEFAULT NULL
   )
   RETURN VARCHAR2
   IS
+    l_stop_color   VARCHAR2(100);
+    l_stop_opacity VARCHAR2(100);
   BEGIN
-    RETURN '<stop offset="' || p_offset || '" stop-color="' || p_stop_color || '" stop-opacity="' || p_stop_opacity || '" />';
+    IF p_stop_color IS NOT NULL THEN
+      l_stop_color := ' stop-color="' || p_stop_color || '"';
+    END IF;
+    IF p_stop_opacity IS NOT NULL THEN
+      l_stop_opacity := ' stop-opacity="' || p_stop_opacity || '"';
+    END IF;
+
+    RETURN '<stop offset="' || p_offset || '"' || l_stop_color || l_stop_opacity || ' />';
   END stop_element;
   
   -- =================================================================================================
@@ -2792,11 +2817,11 @@ AS
     l_fx                VARCHAR2(100);
     l_fy                VARCHAR2(100);
     l_gradientunits     VARCHAR2(100);
-    l_gradienttransform VARCHAR2(100);
+    l_gradienttransform VARCHAR2(1000);
     l_spreadmethod      VARCHAR2(100);
-    l_xlinkhref         VARCHAR2(100);
-    l_class             VARCHAR2(100);
-    l_style             VARCHAR2(100);
+    l_xlinkhref         VARCHAR2(1000);
+    l_class             VARCHAR2(1000);
+    l_style             VARCHAR2(4000);
     
   BEGIN
     IF p_id IS NOT NULL THEN
@@ -2827,7 +2852,7 @@ AS
       l_spreadmethod := ' spreadMethod="' || p_spreadmethod || '"';
     END IF;
     IF p_xlinkhref IS NOT NULL THEN
-      l_xlinkhref := ' xlink:href = "' || p_xlinkhref || '"';
+      l_xlinkhref := ' xlink:href="' || p_xlinkhref || '"';
     END IF;
     IF p_class IS NOT NULL THEN
       l_class := ' class="' || p_class || '"';
